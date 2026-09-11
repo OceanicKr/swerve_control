@@ -5,12 +5,12 @@ L = 1.0
 W = 0.6
 
 WHEEL_POSITIONS = {
-    "LF": (L / 2, W / 2),
-    "LR": (-L / 2, W / 2),
     "RF": (L / 2, -W / 2),
     "RR": (-L / 2, -W / 2),
+    "LF": (L / 2, W / 2),
+    "LR": (-L / 2, W / 2),
 }
-WHEEL_ORDER = ["LF", "LR", "RF", "RR"]
+WHEEL_ORDER = ["RF", "RR", "LF", "LR"]
 
 def compute_wheel_commands(vx, vy, wz):
     results = []
@@ -33,12 +33,15 @@ def optimize_wheel(desired_angle_deg, desired_speed, last_angle_deg, speed_deadb
     if desired_speed < speed_deadband:
         return last_angle_deg, 0.0
 
-    diff = normalize_angle(desired_angle_deg - last_angle_deg)
-    if abs(diff) > 90.0:
-        desired_angle_deg = normalize_angle(desired_angle_deg + 180.0)
+    angle = normalize_angle(desired_angle_deg)
+    if angle > 90.0:
+        angle -= 180.0
+        desired_speed = -desired_speed
+    elif angle < -90.0:
+        angle += 180.0
         desired_speed = -desired_speed
 
-    return desired_angle_deg, desired_speed
+    return angle, desired_speed
 
 if __name__ == "__main__":
     cases = {

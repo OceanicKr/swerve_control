@@ -41,7 +41,8 @@ class SwerveKinematicsNode(Node):
         self.pub_wheels = self.create_publisher(
             Float32MultiArray, '/wheel_speeds', 10)
 
-        self.timer = self.create_timer(1.0 / PUBLISH_RATE_HZ, self.publish_wheel_commands)
+        self.timer = self.create_timer(
+            1.0 / PUBLISH_RATE_HZ, self.publish_wheel_commands)
 
         self.get_logger().info(
             'swerve_kinematics_node started, publishing at '
@@ -72,14 +73,19 @@ class SwerveKinematicsNode(Node):
             angles_deg.append(angle)
             normalized = speed / self.max_wheel_speed
             speeds_norm.append(max(-1.0, min(1.0, normalized)))
-        angles_deg[1] = -angles_deg[1]
+
+        # angles_deg[1] = -angles_deg[1]
+
+        for i, name in enumerate(WHEEL_ORDER):
+            if name in ('LF', 'LR'):
+                speeds_norm[i] = -speeds_norm[i]
 
         angles_msg = Float32MultiArray()
         angles_msg.data = [float(a) for a in angles_deg]
         self.pub_angles.publish(angles_msg)
 
         wheels_msg = Float32MultiArray()
-        wheels_msg.data = [float(s) for s in speeds_norm] + [0.0] 
+        wheels_msg.data = [float(s) for s in speeds_norm] + [0.0]
         self.pub_wheels.publish(wheels_msg)
 
 def main(args=None):

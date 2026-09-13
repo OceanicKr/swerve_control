@@ -5,12 +5,13 @@ L = 1.0
 W = 0.6
 
 WHEEL_POSITIONS = {
-    "RF": (L / 2, -W / 2),
-    "RR": (-L / 2, -W / 2),
     "LF": (L / 2, W / 2),
     "LR": (-L / 2, W / 2),
+    "RF": (L / 2, -W / 2),
+    "RR": (-L / 2, -W / 2),
 }
-WHEEL_ORDER = ["RF", "RR", "LF", "LR"]
+
+WHEEL_ORDER = ["LF", "LR", "RF", "RR"]
 
 def compute_wheel_commands(vx, vy, wz):
     results = []
@@ -29,10 +30,10 @@ def normalize_angle(angle_deg):
         angle_deg -= 360.0
     return angle_deg
 
-def optimize_wheel(desired_angle_deg, desired_speed, last_angle_deg, speed_deadband=1e-3):
+def optimize_wheel(desired_angle_deg, desired_speed, last_angle_deg, speed_deadband=1e-3, boundary_tol=1e-6):
     if desired_speed < speed_deadband:
         return last_angle_deg, 0.0
-
+ 
     angle = normalize_angle(desired_angle_deg)
     if angle > 90.0:
         angle -= 180.0
@@ -41,34 +42,13 @@ def optimize_wheel(desired_angle_deg, desired_speed, last_angle_deg, speed_deadb
         angle += 180.0
         desired_speed = -desired_speed
 
+    # crab fix
+    if abs(abs(angle) - 90.0) < boundary_tol:
+        alt_angle = -angle
+        current_dist = abs(normalize_angle(angle - last_angle_deg))
+        alt_dist = abs(normalize_angle(alt_angle - last_angle_deg))
+        if alt_dist < current_dist:
+            angle = alt_angle
+            desired_speed = -desired_speed
+ 
     return angle, desired_speed
-
-if __name__ == "__main__":
-    cases = {
-        "Straight forward (vx=1)": (1.0, 0.0, 0.0),
-        "Straight backward (vx=-1)": (-1.0, 0.0, 0.0),
-        "Pure strafe left (vy=1)": (0.0, 1.0, 0.0),
-        "Pure pivot CCW (wz=1)": (0.0, 0.0, 1.0),
-        "Diagonal (vx=1, vy=1)": (1.0, 1.0, 0.0),
-    }
-    for label, (vx, vy, wz) in cases.items():
-        print(f"\n{label}: vx={vx}, vy={vy}, wz={wz}")
-        for name, (angle, speed) in zip(WHEEL_ORDER, compute_wheel_commands(vx, vy, wz)):
-            print(f"  {name}: angle={angle:7.2f} deg  speed={speed:.3f}")
-
-    print("\noptimizer sequence test")
-    last_angle = 0.0
-    sequence = [
-        ("forward", (1.0, 0.0, 0.0)),
-        ("stop", (0.0, 0.0, 0.0)),
-        ("backward", (-1.0, 0.0, 0.0)),
-        ("stop again", (0.0, 0.0, 0.0)),
-        ("strafe left", (0.0, 1.0, 0.0)),
-    ]
-    for label, (vx, vy, wz) in sequence:
-        raw_angle, raw_speed = compute_wheel_commands(vx, vy, wz)[0]
-        opt_angle, opt_speed = optimize_wheel(raw_angle, raw_speed, last_angle)
-        print(f"{label:15s} raw=({raw_angle:7.2f}, {raw_speed:.3f})  "
-              f"-> optimized=({opt_angle:7.2f}, {opt_speed:.3f})  "
-              f"[was at {last_angle:.2f}]")
-        last_angle = opt_angle

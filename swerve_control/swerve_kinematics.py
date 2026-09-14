@@ -1,8 +1,8 @@
 #frame convention: x = forward, y = left
 import math
 
-L = 1.0
-W = 0.6
+L = 0.7777
+W = 0.475
 
 WHEEL_POSITIONS = {
     "LF": (L / 2, W / 2),
@@ -11,7 +11,7 @@ WHEEL_POSITIONS = {
     "RR": (-L / 2, -W / 2),
 }
 
-WHEEL_ORDER = ["LF", "LR", "RF", "RR"]
+WHEEL_ORDER = ["RF", "RR", "LF", "LR"]
 
 def compute_wheel_commands(vx, vy, wz):
     results = []
@@ -29,6 +29,12 @@ def normalize_angle(angle_deg):
     if angle_deg > 180.0:
         angle_deg -= 360.0
     return angle_deg
+
+def ramp_value(current, target, max_delta):
+    # to slowly ramp a value from current to target, with a maximum change of max_delta
+    if max_delta <= 0.0: return target
+    if target > current: return min(target, current + max_delta)
+    else: return max(target, current - max_delta)
 
 def optimize_wheel(desired_angle_deg, desired_speed, last_angle_deg, speed_deadband=1e-3, boundary_tol=1e-6):
     if desired_speed < speed_deadband:

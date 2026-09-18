@@ -155,14 +155,17 @@ void loop() {
 
     bool motor_dir = (error[i] > 0) ? !dirclockhigh[i] : dirclockhigh[i];
 
-    if (homing && !homed[i]) {
+    if (homing) {
         if (swHigh) {
             setMotor(0, false, pwm[i], dir[i]);
-            ZERO_DEG_OFFSET[i] = current_position[i];
-            homed[i] = true;
-        } 
+            if (!homed[i]){
+              setMotor(0, false, pwm[i], dir[i]);
+              ZERO_DEG_OFFSET[i] = current_position[i];
+              homed[i] = true;
+            }
+        }
         else setMotor(MOTOR_SPEED, homingDir[i], pwm[i], dir[i]);
-    } else if (!homing) {
+    } else {
         homed[i] = homed[i] || swHigh;
         if (abs(error[i]) <= TOLERANCE) setMotor(0, false, pwm[i], dir[i]);
         else setMotor(MOTOR_SPEED, motor_dir, pwm[i], dir[i]);
